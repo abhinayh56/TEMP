@@ -76,8 +76,8 @@ public:
     virtual Ec_uint16 set_state_safe_operational() = 0;
     virtual Ec_uint16 set_state_operational() = 0;
     virtual Ec_uint16 get_state()= 0;
-    virtual Ec_boolean is_initialized() const = 0;
-    virtual Ec_boolean is_operational() const = 0;
+    virtual Ec_boolean is_initialized() = 0;
+    virtual Ec_boolean is_operational() = 0;
 
     Ec_uint16 set_state(const Ec_uint16 state);
 
