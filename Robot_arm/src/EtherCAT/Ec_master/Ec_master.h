@@ -2,7 +2,8 @@
 #define EC_MASTER_H
 
 #include "Ec_master_base.h"
-#include "../Common/Data_type.h"
+#include "../../../utility/Data_type.h"
+#include "../../../utility/Constants.h"
 
 class Ec_master : public Ec_master_base
 {
