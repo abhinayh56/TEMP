@@ -23,7 +23,6 @@ namespace Ec_master
     {
         SUCCESS = 0,
         FAILURE = 1,
-        UNKNOWN = 3
     };
 
     enum Status
