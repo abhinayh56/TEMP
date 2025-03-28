@@ -35,6 +35,10 @@ public:
     virtual void check_status() = 0;
 
 protected:
+    Ec_int16 num_slaves_in_eni = 0;
+    Ec_int16 num_slaves_connected = 0;
+    Ec_int16 num_slaves_configured = 0;
+
 private:
 }
 

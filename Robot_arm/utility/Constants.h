@@ -1,8 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <Version.h>
-#include <Data_type.h>
+#include "Version.h"
+#include "Data_type.h"
 
 const Ec_string  Ec_version  = ROBOT_CONTROL_VERSION;
 const Ec_boolean Ec_true     = true;
