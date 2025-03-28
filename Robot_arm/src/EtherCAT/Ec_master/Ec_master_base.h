@@ -26,6 +26,15 @@ namespace Ec_master
         UNKNOWN = 3
     };
 
+    enum Status
+    {
+        STATUS_1 = 1,
+        STATUS_2 = 2,
+        STATUS_3 = 3,
+        STATUS_4 = 4,
+        STATUS_5 = 5
+    };
+
     struct Timeout_esm_us
     {
         Ec_uint64 timeout_preop = 3000;
@@ -59,27 +68,24 @@ public:
     Ec_string get_eni_file_name() const;
     Ec_string get_eni_file_path() const;
 
-    Ec_uint16 set_state(const Ec_uint16 state);
-
-    virtual Ec_uint16 get_state()= 0;
     virtual Ec_uint16 start() = 0;
     virtual Ec_uint16 stop() = 0;
     virtual Ec_uint16 update() = 0;
-    virtual Ec_uint16 status() = 0;
     virtual Ec_uint16 set_state_initialize() = 0;
     virtual Ec_uint16 set_state_pre_operational() = 0;
     virtual Ec_uint16 set_state_safe_operational() = 0;
     virtual Ec_uint16 set_state_operational() = 0;
+    virtual Ec_uint16 get_state()= 0;
+    virtual Ec_boolean is_initialized() const = 0;
+    virtual Ec_boolean is_operational() const = 0;
 
-    virtual const Ec_boolean is_running() const = 0;
-    virtual const Ec_boolean is_initialized() const = 0;
-    virtual const Ec_boolean is_operational() const = 0;
+    Ec_uint16 set_state(const Ec_uint16 state);
 
 protected:
     Ec_uint16 ec_master_state = Ec_master::State::UNKNOWN;
-    Ec_boolean ec_running = Ec_false;
     Ec_boolean ec_initialized = Ec_false;
     Ec_boolean ec_operational = Ec_false;
+    Ec_uint16 status;
 
 private:
     Ec_string mac_address = "";

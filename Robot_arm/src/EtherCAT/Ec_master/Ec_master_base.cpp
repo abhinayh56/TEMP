@@ -76,26 +76,6 @@ Ec_uint16 Ec_master_base::set_state(const Ec_uint16 state)
     return ret_val;
 }
 
-Ec_uint16 Ec_master_base::get_state()
-{
-    return ec_master_state;
-}
-
-const Ec_boolean Ec_master_base::is_running() const
-{
-    return ec_running;
-}
-
-const Ec_boolean Ec_master_base::is_initialized() const
-{
-    return ec_initialized;
-}
-
-const Ec_boolean Ec_master_base::is_operational() const
-{
-    return ec_operational;
-}
-
 Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
 {
     Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
