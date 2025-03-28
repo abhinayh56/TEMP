@@ -1,0 +1,4 @@
+g++ Ec_main.cpp Ec_slave_1.cpp Ec_slave_2.cpp Ec_slave_3.cpp Ec_slave_4.cpp Ec_slave_5.cpp Slave_manager.cpp pugixml.cpp -o Ec_main
+
+./Ec_main
+
