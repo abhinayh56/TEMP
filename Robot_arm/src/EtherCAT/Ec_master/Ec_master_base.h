@@ -4,6 +4,7 @@
 #include "iostream"
 #include "../../../utility/Data_type.h"
 #include "../../../utility/Constants.h"
+#include "../../../libraries/Timer/Timer.h"
 
 namespace Ec_master
 {
@@ -25,7 +26,7 @@ namespace Ec_master
         UNKNOWN = 3
     };
 
-    struct Timeout_esm
+    struct Timeout_esm_us
     {
         Ec_uint64 timeout_preop = 3000;
         Ec_uint64 timeout_safeop_op = 10000;
@@ -41,7 +42,7 @@ namespace Ec_master
         Ec_string eni_file_name = "";
         Ec_string eni_file_path = "";
         Ec_uint64 cycle_time_ns = 4000000;
-        Timeout_esm timeout_esm = {3000, 10000, 200, 5000, 30000};
+        Timeout_esm_us timeout_esm_us = {3000000, 10000000, 200000, 5000000, 30000000};
         Ec_uint16 esm_attemp_max = 10;
     };
 }
@@ -78,7 +79,7 @@ public:
     virtual const Ec_boolean is_operational() const = 0;
 
 protected:
-    Ec_uint16 set_state_machine_timeout(const Ec_master::Timeout_esm timeout);
+    Ec_uint16 set_state_machine_timeout(const Ec_master::Timeout_esm_us timeout);
     Ec_uint16 esm(const Ec_uint16 requested_state);
     Ec_uint16 set_state_initialize(const Ec_uint64 timeout);
     Ec_uint16 set_state_pre_operational(const Ec_uint64 timeout);

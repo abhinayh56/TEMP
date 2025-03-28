@@ -1,6 +1,9 @@
 #include "Timer.h"
 
-Timer::Timer() {}
+Timer::Timer()
+{
+    reset();
+}
 
 void Timer::start()
 {
@@ -15,7 +18,7 @@ void Timer::pause()
         t_pause_milli += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         t_pause_micro += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         t_pause_nano += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        
+
         is_pause = Ec_true;
     }
 }

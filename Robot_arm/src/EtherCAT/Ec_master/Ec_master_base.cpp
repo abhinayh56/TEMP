@@ -49,22 +49,21 @@ Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
     eni_file_name = param.eni_file_name;
     eni_file_path = param.eni_file_path;
     cycle_time_ns = param.cycle_time_ns;
-    timeout_preop = param.timeout_esm.timeout_preop;
-    timeout_safeop_op = param.timeout_esm.timeout_safeop_op;
-    timeout_back_2_safeop = param.timeout_esm.timeout_back_2_safeop;
-    timeout_back_2_init = param.timeout_esm.timeout_back_2_init;
-    timeout_max = param.timeout_esm.timeout_max;
+    timeout_preop = param.timeout_esm_us.timeout_preop;
+    timeout_safeop_op = param.timeout_esm_us.timeout_safeop_op;
+    timeout_back_2_safeop = param.timeout_esm_us.timeout_back_2_safeop;
+    timeout_back_2_init = param.timeout_esm_us.timeout_back_2_init;
+    timeout_max = param.timeout_esm_us.timeout_max;
     esm_attemp_max = param.esm_attemp_max;
 
     ret_val |= validate_param();
-    if(ret_val != Ec_master::Return_status::SUCCESS)
+    if (ret_val != Ec_master::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate param" << std::endl;
     }
 
-
     ret_val |= validate_eni();
-    if(ret_val != Ec_master::Return_status::SUCCESS)
+    if (ret_val != Ec_master::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate eni" << std::endl;
     }
@@ -97,7 +96,7 @@ const Ec_boolean Ec_master_base::is_operational() const
     return ec_operational;
 }
 
-Ec_uint16 Ec_master_base::set_state_machine_timeout(const Ec_master::Timeout_esm timeout)
+Ec_uint16 Ec_master_base::set_state_machine_timeout(const Ec_master::Timeout_esm_us timeout)
 {
     timeout_preop = timeout.timeout_preop;
     timeout_safeop_op = timeout.timeout_safeop_op;
@@ -108,14 +107,31 @@ Ec_uint16 Ec_master_base::set_state_machine_timeout(const Ec_master::Timeout_esm
 
 Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
 {
+    Ec_uint16 esm_attemp = 0;
     timeout_exceed_flag = Ec_false;
 
-    timer = Timer(timeout_max);
+    Timer timer;
     timer.start();
+
+    while (esm_attemp <= esm_attemp_max)
+    {
+        esm_attemp++;
+        update();
+
+        while(requested_state != ec_master_state)
+        {
+            if (timeout_exceed_flag == Ec_false)
+            {
+            }
+            else
+            {
+            }
+        }
+    }
 
     while (requested_state != get_state())
     {
-        if (not timer.reached())
+        if (timer.get_time_micro() < timeout_max)
         {
             if (requested_state == Ec_master::State::INIT)
             {
