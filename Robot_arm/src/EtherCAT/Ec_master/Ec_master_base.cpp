@@ -1,45 +1,5 @@
 #include "Ec_master_base.h"
 
-Ec_uint16 Ec_master_base::set_mac_addr(Ec_string &mac_address_)
-{
-    mac_address = mac_address_;
-}
-
-Ec_string Ec_master_base::get_mac_addr() const
-{
-    return mac_address;
-}
-
-Ec_uint16 Ec_master_base::set_network_adapter(Ec_string &network_adapter_)
-{
-    network_adapter = network_adapter_;
-}
-
-Ec_string Ec_master_base::get_network_adapter() const
-{
-    return network_adapter;
-}
-
-Ec_uint16 Ec_master_base::set_eni_file_name(const Ec_string &eni_file_name_)
-{
-    eni_file_name = eni_file_name_;
-}
-
-Ec_string Ec_master_base::get_eni_file_name() const
-{
-    return eni_file_name;
-}
-
-Ec_uint16 Ec_master_base::set_eni_file_path(const Ec_string &eni_file_path_)
-{
-    eni_file_path = eni_file_path_;
-}
-
-Ec_string Ec_master_base::get_eni_file_path() const
-{
-    return eni_file_path;
-}
-
 Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
 {
     Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
@@ -60,20 +20,60 @@ Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
     if (ret_val != Ec_master::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate param" << std::endl;
+        return ret_val;
     }
 
     ret_val |= validate_eni();
     if (ret_val != Ec_master::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate eni" << std::endl;
+        return ret_val;
     }
 
+    return ret_val;
+}
+
+Ec_uint16 Ec_master_base::validate_param()
+{
+    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    // TODO
     return Ec_master::Return_status::SUCCESS;
+}
+
+Ec_uint16 Ec_master_base::validate_eni()
+{
+    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    // TODO
+    return Ec_master::Return_status::SUCCESS;
+}
+
+Ec_string Ec_master_base::get_mac_addr() const
+{
+    return mac_address;
+}
+
+Ec_string Ec_master_base::get_network_adapter() const
+{
+    return network_adapter;
+}
+
+Ec_string Ec_master_base::get_eni_file_name() const
+{
+    return eni_file_name;
+}
+
+Ec_string Ec_master_base::get_eni_file_path() const
+{
+    return eni_file_path;
 }
 
 Ec_uint16 Ec_master_base::set_state(const Ec_uint16 state)
 {
-    return esm(state);
+    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    
+    ret_val |= esm(state);
+
+    return ret_val;
 }
 
 Ec_uint16 Ec_master_base::get_state()
@@ -96,147 +96,85 @@ const Ec_boolean Ec_master_base::is_operational() const
     return ec_operational;
 }
 
-Ec_uint16 Ec_master_base::set_state_machine_timeout(const Ec_master::Timeout_esm_us timeout)
-{
-    timeout_preop = timeout.timeout_preop;
-    timeout_safeop_op = timeout.timeout_safeop_op;
-    timeout_back_2_safeop = timeout.timeout_back_2_safeop;
-    timeout_back_2_init = timeout.timeout_back_2_init;
-    timeout_max = timeout.timeout_max;
-}
-
 Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
 {
-    Ec_uint16 esm_attemp = 0;
-    timeout_exceed_flag = Ec_false;
+    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    
+    Ec_uint16 current_state = get_state();
 
-    Timer timer;
-    timer.start();
-
-    while (esm_attemp <= esm_attemp_max)
+    while (requested_state != current_state)
     {
-        esm_attemp++;
-        update();
-
-        while(requested_state != ec_master_state)
+        if (requested_state == Ec_master::State::INIT)
         {
-            if (timeout_exceed_flag == Ec_false)
+            set_state_initialize();
+        }
+        else if (requested_state == Ec_master::State::PREOP)
+        {
+            if (get_state() == Ec_master::State::INIT)
             {
+                set_state_pre_operational();
+            }
+            else if (get_state() == Ec_master::State::SAFE_OP)
+            {
+                set_state_pre_operational();
+            }
+            else if (get_state() == Ec_master::State::OP)
+            {
+                set_state_pre_operational();
             }
             else
             {
+                set_state_initialize();
             }
         }
-    }
-
-    while (requested_state != get_state())
-    {
-        if (timer.get_time_micro() < timeout_max)
+        else if (requested_state == Ec_master::State::SAFE_OP)
         {
-            if (requested_state == Ec_master::State::INIT)
+            if (get_state() == Ec_master::State::INIT)
             {
-                set_state_initialize(timeout_back_2_init);
+                set_state_pre_operational();
             }
-            else if (requested_state == Ec_master::State::PREOP)
+            else if (get_state() == Ec_master::State::PREOP)
             {
-                if (get_state() == Ec_master::State::INIT)
-                {
-                    set_state(Ec_master::State::PREOP);
-                }
-                else if (get_state() == Ec_master::State::SAFE_OP)
-                {
-                    set_state(Ec_master::State::PREOP);
-                }
-                else if (get_state() == Ec_master::State::OP)
-                {
-                    set_state(Ec_master::State::PREOP);
-                }
-                else
-                {
-                    set_state_initialize(timeout_back_2_init);
-                }
+                set_state_safe_operational();
             }
-            else if (requested_state == Ec_master::State::SAFE_OP)
+            else if (get_state() == Ec_master::State::OP)
             {
-                if (get_state() == Ec_master::State::INIT)
-                {
-                    set_state(Ec_master::State::PREOP);
-                }
-                else if (get_state() == Ec_master::State::PREOP)
-                {
-                    set_state(Ec_master::State::SAFE_OP);
-                }
-                else if (get_state() == Ec_master::State::OP)
-                {
-                    set_state(Ec_master::State::SAFE_OP);
-                }
-                else
-                {
-                    set_state_initialize(timeout_back_2_init);
-                }
-            }
-            else if (requested_state == Ec_master::State::OP)
-            {
-                if (get_state() == Ec_master::State::INIT)
-                {
-                    set_state(Ec_master::State::PREOP);
-                }
-                else if (get_state() == Ec_master::State::PREOP)
-                {
-                    set_state(Ec_master::State::SAFE_OP);
-                }
-                else if (get_state() == Ec_master::State::SAFE_OP)
-                {
-                    set_state(Ec_master::State::OP);
-                }
-                else
-                {
-                    set_state_initialize(timeout_back_2_init);
-                }
+                set_state(Ec_master::State::SAFE_OP);
             }
             else
             {
-                // "print(f "ERROR Requested {interpret_state(requested_state)}")"
-                break;
+                set_state_initialize();
             }
-
-            if (requested_state == get_state())
+        }
+        else if (requested_state == Ec_master::State::OP)
+        {
+            if (get_state() == Ec_master::State::INIT)
             {
-                // print(f "INFO Requested state {interpret_state(requested_state)} ({requested_state}) | Current state {interpret_state(get_state())} ({get_state()})") break
+                set_state_pre_operational();
+            }
+            else if (get_state() == Ec_master::State::PREOP)
+            {
+                set_state_safe_operational();
+            }
+            else if (get_state() == Ec_master::State::SAFE_OP)
+            {
+                set_state_operational();
+            }
+            else
+            {
+                set_state_initialize();
             }
         }
         else
         {
-            if (requested_state != get_state())
-            {
-                // print(f "ERROR Requested state ({requested_state}) not reached in {timeout_max} seconds")
-            }
-            else
-            {
-                // print(f "INFO Requested state ({requested_state}) reached in {timer.time_elapsed()} seconds")
-                // print(f "INFO Requested state {interpret_state(requested_state)} ({requested_state}) | Current state {interpret_state(get_state())} ({get_state()})")
-            }
+            std::cout << "Unknown state requested" << std::endl;
+            ret_val = Ec_master::Return_status::UNKNOWN;
             break;
         }
+
+        current_state = get_state();
+        std::cout << "current state is: " << current_state << std::endl;
     }
-}
 
-Ec_uint16 Ec_master_base::set_state_initialize(const Ec_uint64 timeout)
-{
-    return esm(Ec_master::State::INIT);
-}
-
-Ec_uint16 Ec_master_base::set_state_pre_operational(const Ec_uint64 timeout)
-{
-    return esm(Ec_master::State::PREOP);
-}
-
-Ec_uint16 Ec_master_base::set_state_safe_operational(const Ec_uint64 timeout)
-{
-    return esm(Ec_master::State::SAFE_OP);
-}
-
-Ec_uint16 Ec_master_base::set_state_operational(const Ec_uint64 timeout)
-{
-    return esm(Ec_master::State::OP);
+    return ret_val;
 }
