@@ -6,7 +6,7 @@
 #include "../../../utility/Constants.h"
 #include "../../../libraries/Timer/Timer.h"
 
-namespace Ec_master
+namespace Ec
 {
     enum State
     {
@@ -58,7 +58,7 @@ namespace Ec_master
 class Ec_master_base
 {
 public:
-    Ec_uint16 config(const Ec_master::Param param);
+    Ec_uint16 config(const Ec::Param param);
 
     Ec_uint16 validate_param();
     Ec_uint16 validate_eni();
@@ -81,7 +81,7 @@ public:
     Ec_uint16 set_state(const Ec_uint16 state);
 
 protected:
-    Ec_uint16 ec_master_state = Ec_master::State::UNKNOWN;
+    Ec_uint16 ec_master_state = Ec::State::UNKNOWN;
     Ec_boolean ec_initialized = Ec_false;
     Ec_boolean ec_operational = Ec_false;
     Ec_uint16 status;

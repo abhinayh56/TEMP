@@ -3,14 +3,14 @@
 
 int main()
 {
-    // Ec_master master;
+    Ec_master master;
 
-    // if (master.start() == Ec_master::SUCCESS) {
-    //     std::cout << "Master started successfully." << std::endl;
-    // } else {
-    //     std::cerr << "Failed to start the master." << std::endl;
-    //     return -1;
-    // }
+    if (master.start() == Ec::Return_status::SUCCESS) {
+        std::cout << "Master started successfully." << std::endl;
+    } else {
+        std::cerr << "Failed to start the master." << std::endl;
+        return -1;
+    }
 
     // master.set_state_initialize();
     // master.set_state_pre_operational();

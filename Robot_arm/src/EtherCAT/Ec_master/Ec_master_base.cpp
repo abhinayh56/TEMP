@@ -1,8 +1,8 @@
 #include "Ec_master_base.h"
 
-Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
+Ec_uint16 Ec_master_base::config(const Ec::Param param)
 {
-    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    Ec_uint16 ret_val = Ec::Return_status::SUCCESS;
 
     mac_address = param.mac_address;
     network_adapter = param.network_adapter;
@@ -17,14 +17,14 @@ Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
     esm_attemp_max = param.esm_attemp_max;
 
     ret_val |= validate_param();
-    if (ret_val != Ec_master::Return_status::SUCCESS)
+    if (ret_val != Ec::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate param" << std::endl;
         return ret_val;
     }
 
     ret_val |= validate_eni();
-    if (ret_val != Ec_master::Return_status::SUCCESS)
+    if (ret_val != Ec::Return_status::SUCCESS)
     {
         std::cout << "Failed to validate eni" << std::endl;
         return ret_val;
@@ -35,16 +35,16 @@ Ec_uint16 Ec_master_base::config(const Ec_master::Param param)
 
 Ec_uint16 Ec_master_base::validate_param()
 {
-    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    Ec_uint16 ret_val = Ec::Return_status::SUCCESS;
     // TODO
-    return Ec_master::Return_status::SUCCESS;
+    return Ec::Return_status::SUCCESS;
 }
 
 Ec_uint16 Ec_master_base::validate_eni()
 {
-    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    Ec_uint16 ret_val = Ec::Return_status::SUCCESS;
     // TODO
-    return Ec_master::Return_status::SUCCESS;
+    return Ec::Return_status::SUCCESS;
 }
 
 Ec_string Ec_master_base::get_mac_addr() const
@@ -69,7 +69,7 @@ Ec_string Ec_master_base::get_eni_file_path() const
 
 Ec_uint16 Ec_master_base::set_state(const Ec_uint16 state)
 {
-    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    Ec_uint16 ret_val = Ec::Return_status::SUCCESS;
     
     ret_val |= esm(state);
 
@@ -78,27 +78,27 @@ Ec_uint16 Ec_master_base::set_state(const Ec_uint16 state)
 
 Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
 {
-    Ec_uint16 ret_val = Ec_master::Return_status::SUCCESS;
+    Ec_uint16 ret_val = Ec::Return_status::SUCCESS;
     
     Ec_uint16 current_state = get_state();
 
     while (requested_state != current_state)
     {
-        if (requested_state == Ec_master::State::INIT)
+        if (requested_state == Ec::State::INIT)
         {
             set_state_initialize();
         }
-        else if (requested_state == Ec_master::State::PREOP)
+        else if (requested_state == Ec::State::PREOP)
         {
-            if (get_state() == Ec_master::State::INIT)
+            if (get_state() == Ec::State::INIT)
             {
                 set_state_pre_operational();
             }
-            else if (get_state() == Ec_master::State::SAFE_OP)
+            else if (get_state() == Ec::State::SAFE_OP)
             {
                 set_state_pre_operational();
             }
-            else if (get_state() == Ec_master::State::OP)
+            else if (get_state() == Ec::State::OP)
             {
                 set_state_pre_operational();
             }
@@ -107,36 +107,36 @@ Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
                 set_state_initialize();
             }
         }
-        else if (requested_state == Ec_master::State::SAFE_OP)
+        else if (requested_state == Ec::State::SAFE_OP)
         {
-            if (get_state() == Ec_master::State::INIT)
+            if (get_state() == Ec::State::INIT)
             {
                 set_state_pre_operational();
             }
-            else if (get_state() == Ec_master::State::PREOP)
+            else if (get_state() == Ec::State::PREOP)
             {
                 set_state_safe_operational();
             }
-            else if (get_state() == Ec_master::State::OP)
+            else if (get_state() == Ec::State::OP)
             {
-                set_state(Ec_master::State::SAFE_OP);
+                set_state(Ec::State::SAFE_OP);
             }
             else
             {
                 set_state_initialize();
             }
         }
-        else if (requested_state == Ec_master::State::OP)
+        else if (requested_state == Ec::State::OP)
         {
-            if (get_state() == Ec_master::State::INIT)
+            if (get_state() == Ec::State::INIT)
             {
                 set_state_pre_operational();
             }
-            else if (get_state() == Ec_master::State::PREOP)
+            else if (get_state() == Ec::State::PREOP)
             {
                 set_state_safe_operational();
             }
-            else if (get_state() == Ec_master::State::SAFE_OP)
+            else if (get_state() == Ec::State::SAFE_OP)
             {
                 set_state_operational();
             }
@@ -148,7 +148,7 @@ Ec_uint16 Ec_master_base::esm(const Ec_uint16 requested_state)
         else
         {
             std::cout << "Unknown state requested" << std::endl;
-            ret_val = Ec_master::Return_status::UNKNOWN;
+            ret_val = Ec::Return_status::FAILURE;
             break;
         }
 
