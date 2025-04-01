@@ -12,7 +12,7 @@ int main()
         return -1;
     }
 
-    // master.set_state_initialize();
+    master.set_state_initialize();
     // master.set_state_pre_operational();
     // master.set_state_safe_operational();
     // master.set_state_operational();
@@ -22,6 +22,6 @@ int main()
     //     usleep(1000000);  // 1 second delay
     // }
 
-    // master.stop();
+    master.stop();
     return 0;
 }

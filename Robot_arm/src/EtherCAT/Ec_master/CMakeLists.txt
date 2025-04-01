@@ -20,7 +20,7 @@ find_library(ETHERCAT_LIB ethercat)
 add_executable(ethercat_master
     main.cpp
     Ec_master.cpp
-    Ec_master_base.cpp
+    # Ec_master_base.cpp
 )
 
 target_link_libraries(ethercat_master ${EtherCAT_LIB_PATH})

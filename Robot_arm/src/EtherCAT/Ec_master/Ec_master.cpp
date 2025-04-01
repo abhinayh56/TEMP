@@ -29,14 +29,13 @@ Ec_uint16 Ec_master::start()
         return Ec::Return_status::FAILURE;
     }
 
-    if (!configure_master())
+    if (!config())
     {
         std::cerr << "Failed to configure master" << std::endl;
         return Ec::Return_status::FAILURE;
     }
 
     ec_initialized = Ec_true;
-    std::cout << "Master started successfully." << std::endl;
     return Ec::Return_status::SUCCESS;
 }
 
@@ -78,31 +77,48 @@ Ec_uint16 Ec_master::update()
 Ec_uint16 Ec_master::set_state_initialize()
 {
     std::cout << "Setting state to INIT..." << std::endl;
-    return set_state(Ec::INIT);
+    return set_state(Ec::State::INIT);
 }
 
 Ec_uint16 Ec_master::set_state_pre_operational()
 {
     std::cout << "Setting state to PRE-OP..." << std::endl;
-    return set_state(Ec::PREOP);
+    return set_state(Ec::State::PREOP);
 }
 
 Ec_uint16 Ec_master::set_state_safe_operational()
 {
     std::cout << "Setting state to SAFE-OP..." << std::endl;
-    return set_state(Ec::SAFE_OP);
+    return set_state(Ec::State::SAFE_OP);
 }
 
 Ec_uint16 Ec_master::set_state_operational()
 {
     std::cout << "Setting state to OPERATIONAL..." << std::endl;
-    return set_state(Ec::OP);
+    return set_state(Ec::State::OP);
 }
 
-Ec_uint16 Ec_master::get_state()
+Ec_uint16 Ec_master::set_state(const Ec_uint16 state)
 {
-    return ec_master_state;
+    if(state==Ec::State::INIT)
+    {
+    }
+    else if(state==Ec::State::PREOP)
+    {
+    }
+    else if(state==Ec::State::SAFE_OP)
+    {
+    }
+    else if(state==Ec::State::OP)
+    {
+    }
+    else
+    {
+        std::cout << "UNKNOWN STATE requested" << std::endl;
+    }
 }
+
+Ec_uint16 Ec_master::get_state(){}
 
 Ec_boolean Ec_master::is_initialized()
 {
@@ -114,22 +130,106 @@ Ec_boolean Ec_master::is_operational()
     return ec_operational;
 }
 
-bool Ec_master::configure_master()
+bool Ec_master::config()
 {
     std::cout << "Configuring master..." << std::endl;
 
     // Add slave configuration (replace with actual vendor and product ID)
-    slave_config = ecrt_master_slave_config(
-        master, 0, 0, 0x00000002, 0x12345678);  // Example Vendor ID and Product ID
+    // slave_config = ecrt_master_slave_config(master, 0, 0, 0x00000002, 0x12345678);  // Example Vendor ID and Product ID
 
-    if (!slave_config) {
+    // if (!slave_config)
+    // {
+    //     std::cerr << "Failed to configure slave" << std::endl;
+    //     return false;
+    // }
+
+    // Configure slave parameters
+    // ecrt_slave_config_pdos(slave_config, nullptr);  // PDO configuration
+    // ecrt_domain_reg_pdo_entry_list(domain, nullptr);  // PDO entry registration
+
+    static ec_domain_t *domain1 = NULL;
+    static uint8_t *domain1_pd = NULL;
+
+    //------------------------
+    #define BusCouplerPos 0, 0
+    #define Beckhoff_EK1100 0x00000002, 0x044c2c52
+
+    #define DigOutSlavePos 0, 1                    //  alias, position
+    #define Beckhoff_EL2008 0x00000002, 0x07d83052 // vendor id, product code
+    static unsigned int off_dig_out;
+
+    static const ec_pdo_entry_reg_t domain1_regs[] = {
+        {DigOutSlavePos, Beckhoff_EL2008, 0x7000, 1, &off_dig_out}, // alias, position, vendor id, product code, index, subindex, offset, bit_position
+        {}};
+
+    // Digital out ------------------------
+    static const ec_pdo_entry_info_t el2008_channels[] = {
+        {0x7000, 1, 1}, // Value 1
+        {0x7010, 1, 1}, // Value 2
+        {0x7020, 1, 1}, // Value 3
+        {0x7030, 1, 1}, // Value 4
+        {0x7040, 1, 1}, // Value 5
+        {0x7050, 1, 1}, // Value 6
+        {0x7060, 1, 1}, // Value 7
+        {0x7070, 1, 1}, // Value 8
+    };
+
+    static const ec_pdo_info_t el2008_pdos[] = {
+        {0x1600, 1, &el2008_channels[0]},
+        {0x1601, 1, &el2008_channels[1]},
+        {0x1602, 1, &el2008_channels[2]},
+        {0x1603, 1, &el2008_channels[3]},
+        {0x1604, 1, &el2008_channels[4]},
+        {0x1605, 1, &el2008_channels[5]},
+        {0x1606, 1, &el2008_channels[6]},
+        {0x1607, 1, &el2008_channels[7]}};
+
+    static const ec_sync_info_t el2008_syncs[] = {
+        {0, EC_DIR_OUTPUT, 8, el2008_pdos},
+        {1, EC_DIR_INPUT},
+        {0xff}};
+
+    //------------------------
+
+    sc = ecrt_master_slave_config(master, DigOutSlavePos, Beckhoff_EL2008)
+    if (!sc)
+    {
         std::cerr << "Failed to configure slave" << std::endl;
         return false;
     }
 
     // Configure slave parameters
-    // ecrt_slave_config_pdos(slave_config, nullptr);  // PDO configuration
+    sc = ecrt_slave_config_pdos(slave_config, EC_END, el2008_syncs);  // PDO configuration
+    if (sc)
+    {
+        fprintf(stderr, "Failed to configure PDOs.\n");
+        return -1;
+    }
+
     // ecrt_domain_reg_pdo_entry_list(domain, nullptr);  // PDO entry registration
+
+    slave_config = ecrt_master_slave_config(master, BusCouplerPos, Beckhoff_EK1100);
+    if (!slave_config)
+    {
+        return -1;
+    }
+
+    if (ecrt_domain_reg_pdo_entry_list(domain1, domain1_regs))
+    {
+        fprintf(stderr, "PDO entry registration failed!\n");
+        return -1;
+    }
+
+    // Activate master
+    if (ecrt_master_activate(master))
+    {
+        return -1;
+    }
+
+    if (!(domain1_pd = ecrt_domain_data(domain1)))
+    {
+        // return -1;
+    }
 
     return true;
 }
