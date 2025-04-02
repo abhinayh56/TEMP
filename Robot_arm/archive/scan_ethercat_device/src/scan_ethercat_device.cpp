@@ -113,7 +113,7 @@ void cyclic_task()
 
     int32_t act_pos = EC_READ_S32(domain1_pd + off_mact_1);
 
-    // std::cout << "act_pos: " << act_pos << ", dig_input: " << dig_input << ", TXPDO: " << ", " << Device_ID << ", " << Second << ", " << Minute << ", " << Hour << ", " << Day << ", " << Month << ", " << Year << ", " << Roll_Offset << ", " << Pitch_Offset << ", " << Yaw_Offset << ", " << Grip_Offset << ", " << No_of_Usages << ", " << Max_Usages << ", " << Digital_Inputs << ", " << Grip_Counts << ", " << System_Number << ", " << Device_UID << ", " << Spare_Bytes << ", " << MFG_Day << ", " << MFG_Month << ", " << MFG_Year << std::endl;
+    std::cout << "act_pos: " << act_pos << ", dig_input: " << dig_input << ", TXPDO: " << ", " << Device_ID << ", " << Second << ", " << Minute << ", " << Hour << ", " << Day << ", " << Month << ", " << Year << ", " << Roll_Offset << ", " << Pitch_Offset << ", " << Yaw_Offset << ", " << Grip_Offset << ", " << No_of_Usages << ", " << Max_Usages << ", " << Digital_Inputs << ", " << Grip_Counts << ", " << System_Number << ", " << Device_UID << ", " << Spare_Bytes << ", " << MFG_Day << ", " << MFG_Month << ", " << MFG_Year << std::endl;
 
     if (counter)
     {
@@ -135,10 +135,10 @@ void cyclic_task()
     ecrt_master_send(master);
 
     // 7.6. check master state
-    check_master_state();
+    // check_master_state();
 
     // 7.7. check slave(s) state
-    std::cout << "---\n";
+    // std::cout << "---\n";
     // check_slave_config_states("ek1100", sc_ek1100, sc_ek1100_state);
     // std::cout << "---\n";
     // check_slave_config_states("el2008", sc_el2008, sc_el2008_state);
