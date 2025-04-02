@@ -1,7 +1,17 @@
-#include <ecrt.h>
+#include <stdint.h>
 #include <iostream>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
-
+#include <time.h>     /* clock_gettime() */
+#include <sys/mman.h> /* mlockall() */
+#include <sched.h>    /* sched_setscheduler() */
+#include <ecrt.h>
 #include "master.h"
 #include "salve_0.h"
 #include "salve_1.h"
@@ -41,6 +51,7 @@ static unsigned int off_21;
 static const ec_pdo_entry_reg_t domain1_regs[] = {
     {el2008_alias_pos, el2008_vendorid_prod_code, 0x7000, 1, &off_el2008}, // alias, position, vendor id, product code, index, subindex, offset, bit_position
     {el1008_alias_pos, el1008_vendorid_prod_code, 0x6000, 1, &off_el1008}, // alias, position, vendor id, product code, index, subindex, offset, bit_position
+    // {rfid_alias_pos, rfid_vendorid_prod_code, 0x0006, 1, &off_rfid},       // alias, position, vendor id, product code, index, subindex, offset, bit_position
     {rfid_alias_pos, rfid_vendorid_prod_code, 0x0006, 0x01, &off_1},
     {rfid_alias_pos, rfid_vendorid_prod_code, 0x0006, 0x02, &off_2},
     {rfid_alias_pos, rfid_vendorid_prod_code, 0x0006, 0x03, &off_3},
@@ -67,13 +78,12 @@ static const ec_pdo_entry_reg_t domain1_regs[] = {
 
 void cyclic_task()
 {
-    // 7.1. receive process data
-    // Fetches received frames from the hardware and processes the datagrams
+    // receive process data
     ecrt_master_receive(master);
-    // Determines the states of the domain's datagrams
     ecrt_domain_process(domain1);
 
-    // 7.2. Reads the state of a domain
+    // check process data state
+    // check_domain1_state();
     ec_domain_state_t ds;
     ecrt_domain_state(domain1, &ds);
     if (ds.working_counter != domain1_state.working_counter)
@@ -86,9 +96,10 @@ void cyclic_task()
     }
     domain1_state = ds;
 
-    // 7.3. read process data
+    // read process data
     uint16_t dig_input = EC_READ_U16(domain1_pd + off_el1008);
-    
+    // printf("Received TxPDO Data: %u\n", tx_value);
+
     uint16_t Device_ID      = EC_READ_U16(domain1_pd + off_1);
     uint16_t Second         = EC_READ_U16(domain1_pd + off_2);
     uint16_t Minute         = EC_READ_U16(domain1_pd + off_3);
@@ -113,7 +124,7 @@ void cyclic_task()
 
     int32_t act_pos = EC_READ_S32(domain1_pd + off_mact_1);
 
-    // std::cout << "act_pos: " << act_pos << ", dig_input: " << dig_input << ", TXPDO: " << ", " << Device_ID << ", " << Second << ", " << Minute << ", " << Hour << ", " << Day << ", " << Month << ", " << Year << ", " << Roll_Offset << ", " << Pitch_Offset << ", " << Yaw_Offset << ", " << Grip_Offset << ", " << No_of_Usages << ", " << Max_Usages << ", " << Digital_Inputs << ", " << Grip_Counts << ", " << System_Number << ", " << Device_UID << ", " << Spare_Bytes << ", " << MFG_Day << ", " << MFG_Month << ", " << MFG_Year << std::endl;
+    std::cout << "act_pos: " << act_pos << ", dig_input: " << dig_input << ", TXPDO: " << ", " << Device_ID << ", " << Second << ", " << Minute << ", " << Hour << ", " << Day << ", " << Month << ", " << Year << ", " << Roll_Offset << ", " << Pitch_Offset << ", " << Yaw_Offset << ", " << Grip_Offset << ", " << No_of_Usages << ", " << Max_Usages << ", " << Digital_Inputs << ", " << Grip_Counts << ", " << System_Number << ", " << Device_UID << ", " << Spare_Bytes << ", " << MFG_Day << ", " << MFG_Month << ", " << MFG_Year << std::endl;
 
     if (counter)
     {
@@ -127,19 +138,17 @@ void cyclic_task()
         blink = !blink;
     }
 
-    // 7.4. write process data
+    // write process data
     EC_WRITE_U8(domain1_pd + off_el2008, blink ? 0xAA : 0x55);
 
-    // 7.5. send process data
+    // send process data
     ecrt_domain_queue(domain1);
     ecrt_master_send(master);
 
-    // 7.6. check master state
-    check_master_state();
+    // check_master_state();
 
-    // 7.7. check slave(s) state
-    std::cout << "---\n";
-    // check_slave_config_states("ek1100", sc_ek1100, sc_ek1100_state);
+    // std::cout << "---\n";
+    check_slave_config_states("ek1100", sc_ek1100, sc_ek1100_state);
     // std::cout << "---\n";
     // check_slave_config_states("el2008", sc_el2008, sc_el2008_state);
     // std::cout << "---\n";
@@ -147,58 +156,100 @@ void cyclic_task()
     // std::cout << "---\n";
     // check_slave_config_states("rfid", sc_rfid, sc_rfid_state);
     // std::cout << "---\n";
-    check_slave_config_states("mact_1", sc_mact_1, sc_mact_1_state);
+    // check_slave_config_states("mact_1", sc_mact_1, sc_mact_1_state);
     // std::cout << "---\n";
 }
 
 int main()
 {
-    // 1. Start master
+    struct timespec wakeup_time;
+    int ret = 0;
+
+    // Start master
     master = ecrt_request_master(0);
     if (!master)
     {
         return -1;
     }
 
-    // 2. Create domain
+    // Create domain
     domain1 = ecrt_master_create_domain(master);
     if (!domain1)
     {
         return -1;
     }
 
-    // 3. Configure PDO
+    // Configure PDO
     configure_slave_0(master);
     configure_slave_1(master);
     configure_slave_2(master);
     configure_slave_3(master);
     configure_slave_4(master);
 
-    // 4. registers a group of PDOs to a domain
     if (ecrt_domain_reg_pdo_entry_list(domain1, domain1_regs))
     {
         fprintf(stderr, "PDO entry registration failed!\n");
         return -1;
     }
 
-    // 5. finnishes configuration and activates master
+    // Activate master
     if (ecrt_master_activate(master))
     {
         return -1;
     }
 
-    // 6. returns the pointer to domain process data
     if (!(domain1_pd = ecrt_domain_data(domain1)))
     {
         // return -1;
     }
 
-    // 7. start continuous loop
+    struct sched_param param = {};
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    std::cout << "using priority: " << param.sched_priority << std::endl;
+    if (sched_setscheduler(0, SCHED_FIFO, &param) == -1)
+    {
+        perror("sched_setscheduler failed");
+    }
+    else
+    {
+        std::cout << "sched_setscheduler successful" << std::endl;
+    }
+
+    if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+    {
+        fprintf(stderr, "Warning: Failed to lock memory: %s\n", strerror(errno));
+    }
+    else
+    {
+        std::cout << "memory locked" << std::endl;
+    }
+
+    stack_prefault();
+    std::cout << "stack_prefault done" << std::endl;
+
+    printf("starting RT task with dt=%u ns.\n", PERIOD_NS);
+
+    clock_gettime(CLOCK_MONOTONIC, &wakeup_time);
+    wakeup_time.tv_sec += 1;
+    wakeup_time.tv_nsec = 0;
+
     while (true)
     {
+        ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeup_time, NULL);
+        if (ret)
+        {
+            fprintf(stderr, "clock_nanosleep(): %s\n", strerror(ret));
+            break;
+        }
+
         cyclic_task();
 
-        usleep(PERIOD_NS/1000);
+        wakeup_time.tv_nsec += PERIOD_NS;
+        while (wakeup_time.tv_nsec >= NSEC_PER_SEC)
+        {
+            wakeup_time.tv_nsec -= NSEC_PER_SEC;
+            wakeup_time.tv_sec++;
+        }
     }
 
     return 0;
