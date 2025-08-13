@@ -10,6 +10,7 @@ public:
     void config();
     void cyclic();
 
+protected:
 private:
 };
 

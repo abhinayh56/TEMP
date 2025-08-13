@@ -7,6 +7,7 @@ public:
     Ec_master();
     ~Ec_master();
 
+protected:
 private:
 };
 
